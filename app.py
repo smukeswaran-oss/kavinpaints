@@ -493,6 +493,42 @@ def admin_delete(rec_id):
     return redirect(url_for("admin"))
 
 
+@app.route("/admin/clear", methods=["POST"])
+@admin_required
+def admin_clear():
+    if request.form.get("confirmation", "").strip() != "CLEAR":
+        flash("Type CLEAR to remove all records.", "error")
+        return redirect(url_for("admin"))
+
+    db = get_db()
+    paths = [
+        BASE_DIR / row["photo"]
+        for row in db.execute("SELECT photo FROM cards WHERE photo IS NOT NULL")
+    ]
+    paths.extend(
+        BASE_DIR / row["card_image"]
+        for row in db.execute("SELECT card_image FROM cards WHERE card_image IS NOT NULL")
+    )
+    paths.extend(
+        BASE_DIR / row["photo"]
+        for row in db.execute("SELECT photo FROM bill_entries WHERE photo IS NOT NULL")
+    )
+
+    db.execute("DELETE FROM bill_entries")
+    db.execute("DELETE FROM cards")
+    db.commit()
+
+    for path in paths:
+        try:
+            if path.exists():
+                path.unlink()
+        except OSError:
+            pass
+
+    flash("All records have been deleted.", "success")
+    return redirect(url_for("admin"))
+
+
 @app.route("/admin/photo/<int:rec_id>")
 @admin_required
 def admin_photo(rec_id):
