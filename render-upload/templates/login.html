@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a href="{{ url_for('index') }}" class="site-brand">
+      <img class="site-logo" src="{{ url_for('static', filename='logo.png') }}" alt="Kavinesh Paint Shop Logo">
+      <h1 class="site-name">Kavinesh Paint Shop</h1>
+    </a>
+  </header>
+  <div class="page">
+    <div class="panel">
+      <h2 class="panel-title">Admin Login</h2>
+      <p class="sub">Enter your credentials to view the database</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="post" class="form">
+        <div class="row">
+          <label for="username">Username</label>
+          <input id="username" name="username" type="text" placeholder="Enter username" required autofocus>
+        </div>
+        <div class="row">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" placeholder="Enter password" required>
+        </div>
+        <button type="submit">Login</button>
+      </form>
+
+      <a class="link" href="{{ url_for('index') }}">&larr; Back to home</a>
+    </div>
+  </div>
+</body>
+</html>

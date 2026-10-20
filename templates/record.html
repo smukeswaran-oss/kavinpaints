@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Record #{{ rec['number'] }} - Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a href="{{ url_for('index') }}" class="site-brand">
+      <img class="site-logo" src="{{ url_for('static', filename='logo.png') }}" alt="Kavinesh Paint Shop Logo">
+      <h1 class="site-name">Kavinesh Paint Shop</h1>
+    </a>
+  </header>
+  <div class="page">
+    <div class="panel card-panel">
+      <div class="admin-bar">
+        <span class="admin-user">Record <strong>#{{ rec['number'] }}</strong></span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <a class="mini edit" href="{{ url_for('admin_edit', rec_id=rec['id']) }}">Update</a>
+          <form method="post" action="{{ url_for('admin_delete', rec_id=rec['id']) }}" onsubmit="return confirm('Delete record #{{ rec['number'] }} ({{ rec['name'] }})? This cannot be undone.');" style="display:inline;margin:0;">
+            <button type="submit" class="mini danger">Delete</button>
+          </form>
+          <a class="mini" href="{{ url_for('admin') }}">&larr; Back to list</a>
+        </div>
+      </div>
+
+      <div class="details">
+        <div class="details-title">{{ rec['name'] }}</div>
+        <div class="details-grid">
+          <div><span>Database ID</span><strong>{{ rec['id'] }}</strong></div>
+          <div><span>Card Number</span><strong>#{{ rec['number'] }}</strong></div>
+          <div><span>User Name</span><strong>{{ rec['name'] }}</strong></div>
+          <div><span>Mobile</span><strong>{{ rec['mobile'] }}</strong></div>
+          <div><span>Location</span><strong>{{ rec['location'] }}</strong></div>
+          <div><span>Total Bills</span><strong>{{ entries|length }} {% if entries|length == 1 %}Bill{% else %}Bills{% endif %}</strong></div>
+          <div><span>Bill Amount (Total)</span><strong>&#8377; {{ '%.2f'|format(rec['amount']) }}</strong></div>
+          <div><span>Bill Photo</span><strong>{{ rec['photo'] }}</strong></div>
+          <div><span>Card Image</span><strong>{{ rec['card_image'] }}</strong></div>
+          <div><span>Created At</span><strong>{{ rec['created_at'] }}</strong></div>
+        </div>
+      </div>
+
+      <h2 class="panel-title" style="margin-top:20px;">Bill Entry History</h2>
+      <div class="table-wrap" style="margin-bottom:20px;">
+        <table class="admin-table">
+          <thead>
+            <tr><th>#</th><th>Amount</th><th>Date &amp; Time</th><th>Uploaded Photo</th></tr>
+          </thead>
+          <tbody>
+            {% for e in entries %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>&#8377; {{ '%.2f'|format(e['amount']) }}</td>
+              <td class="small">{{ e['created_at'] }}</td>
+              <td>
+                {% if e['photo'] %}
+                  <a class="mini" href="{{ url_for('admin_entry_photo', entry_id=e['id']) }}" target="_blank">View Photo</a>
+                {% else %}
+                  <span class="small">&mdash;</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="empty">No bill entries.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 class="panel-title">Uploaded Bill Photos</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-bottom:24px;">
+        {% for e in entries %}
+          {% if e['photo'] %}
+          <div style="text-align:center;background:#0a1a2e;border:1px solid #274a70;border-radius:10px;padding:10px;max-width:240px;flex:1 1 200px;">
+            <a href="{{ url_for('admin_entry_photo', entry_id=e['id']) }}" target="_blank">
+              <img src="{{ url_for('admin_entry_photo', entry_id=e['id']) }}" style="width:100%;height:150px;object-fit:cover;border-radius:6px;border:1px solid #1a3352;" alt="Bill photo #{{ loop.index }}">
+            </a>
+            <div style="margin-top:8px;font-size:13px;color:#ecc464;font-weight:700;">Entry #{{ loop.index }}: &#8377; {{ '%.2f'|format(e['amount']) }}</div>
+            <div style="font-size:11px;color:#8299b3;margin-top:2px;">{{ e['created_at'] }}</div>
+            <a class="mini" style="margin-top:8px;display:inline-block;" href="{{ url_for('admin_entry_photo', entry_id=e['id']) }}" target="_blank">Full Image</a>
+          </div>
+          {% endif %}
+        {% else %}
+          <img class="card-img" src="{{ url_for('admin_photo', rec_id=rec['id']) }}" alt="Bill photo">
+        {% endfor %}
+      </div>
+
+      <h2 class="panel-title" style="margin-top:20px;">Gift Card</h2>
+      <img class="card-img" src="{{ url_for('card_image', rec_id=rec['id']) }}" alt="Gift card">
+
+      <div class="actions">
+        <a class="btn" href="{{ url_for('download', rec_id=rec['id']) }}">Download PDF</a>
+        <a class="btn edit-btn" href="{{ url_for('admin_edit', rec_id=rec['id']) }}">Update</a>
+        <form method="post" action="{{ url_for('admin_delete', rec_id=rec['id']) }}" onsubmit="return confirm('Delete record #{{ rec['number'] }} ({{ rec['name'] }})? This cannot be undone.');" style="display:inline;margin:0;">
+          <button type="submit" class="btn danger-btn">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

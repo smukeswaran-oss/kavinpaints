@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edit Record #{{ rec['number'] }} - Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a href="{{ url_for('index') }}" class="site-brand">
+      <img class="site-logo" src="{{ url_for('static', filename='logo.png') }}" alt="Kavinesh Paint Shop Logo">
+      <h1 class="site-name">Kavinesh Paint Shop</h1>
+    </a>
+  </header>
+  <div class="page">
+    <div class="panel">
+      <div class="admin-bar">
+        <span class="admin-user">Edit Record <strong>#{{ rec['number'] }}</strong></span>
+        <a class="mini" href="{{ url_for('admin') }}">&larr; Back to list</a>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="post" class="form">
+        <div class="row">
+          <label for="name">User Name</label>
+          <input id="name" name="name" type="text" value="{{ form.get('name', rec['name']) }}" required>
+        </div>
+        <div class="row">
+          <label for="mobile">Mobile Number (10 digits)</label>
+          <input id="mobile" name="mobile" type="tel" value="{{ form.get('mobile', rec['mobile']) }}" placeholder="Enter 10-digit mobile number" maxlength="10" minlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" required>
+        </div>
+        <div class="row">
+          <label for="location">Location</label>
+          <input id="location" name="location" type="text" value="{{ form.get('location', rec['location']) }}" required>
+        </div>
+        <div class="row">
+          <label for="amount">Bill Amount (Total)</label>
+          <input id="amount" name="amount" type="number" step="0.01" min="0" value="{{ form.get('amount', rec['amount']) }}">
+        </div>
+        <button type="submit">Update Record</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

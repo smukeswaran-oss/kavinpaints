@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gift Card Registration</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a href="/" class="site-brand">
+      <img class="site-logo" src="/static/logo.png" alt="Kavinesh Paint Shop Logo">
+      <h1 class="site-name">Kavinesh Paint Shop</h1>
+    </a>
+  </header>
+  <div class="page">
+    <div class="panel">
+      <a class="gift-text-link" href="/admin">Gift Card Registration</a>
+      <p class="sub">Fill the form, submit and get your lucky number from 1 to 200</p>
+
+      
+        
+      
+
+      <form method="post" enctype="multipart/form-data" class="form">
+        <div class="row">
+          <label for="name">User Name</label>
+          <input id="name" name="name" type="text" value="" placeholder="Enter your name" required>
+        </div>
+        <div class="row">
+          <label for="mobile">Mobile Number</label>
+          <input id="mobile" name="mobile" type="tel" value="" placeholder="Enter mobile number" required>
+        </div>
+        <div class="row">
+          <label for="site">Site Name</label>
+          <input id="site" name="site" type="text" value="" placeholder="Enter site name" required>
+        </div>
+        <div class="row">
+          <label for="location">Location</label>
+          <input id="location" name="location" type="text" value="" placeholder="Enter location" required>
+        </div>
+        <div class="row">
+          <label for="amount">Amount</label>
+          <input id="amount" name="amount" type="number" step="0.01" min="0" value="" placeholder="Enter amount">
+        </div>
+        <div class="row">
+          <label for="photo">Choose Photo</label>
+          <label class="file-field">
+            <input id="photo" name="photo" type="file" accept=".jpg,.jpeg,.png,.webp" required>
+            <span class="file-btn">Choose File</span>
+            <span class="file-name">No file chosen</span>
+          </label>
+        </div>
+        <button type="submit">Submit</button>
+      </form>
+
+      <a class="link" href="/admin">Open Gift Card page &rarr;</a>
+    </div>
+
+    
+  </div>
+  <script>
+    const photoInput = document.getElementById("photo");
+    if (photoInput) {
+      photoInput.addEventListener("change", function () {
+        const nameEl = this.closest(".file-field").querySelector(".file-name");
+        nameEl.textContent = this.files.length ? this.files[0].name : "No file chosen";
+      });
+    }
+  </script>
+</body>
+</html>

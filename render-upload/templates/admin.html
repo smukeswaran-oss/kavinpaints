@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin - Gift Card Database</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a href="{{ url_for('index') }}" class="site-brand">
+      <img class="site-logo" src="{{ url_for('static', filename='logo.png') }}" alt="Kavinesh Paint Shop Logo">
+      <h1 class="site-name">Kavinesh Paint Shop</h1>
+    </a>
+  </header>
+  <div class="page">
+    <div class="panel admin-panel">
+      <h2 class="panel-title">Admin &mdash; Database Details</h2>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <div class="admin-bar">
+        <span class="admin-user">Logged in as <strong>kps</strong></span>
+        <a class="mini" href="{{ url_for('admin_logout') }}">Logout</a>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><span>Total Registered</span><strong>{{ stats['total'] }}</strong></div>
+        <div class="stat"><span>Numbers Free</span><strong>{{ stats['free'] }}</strong></div>
+        <div class="stat"><span>Showing</span><strong>{{ stats['search_count'] }}</strong></div>
+      </div>
+
+      <form method="get" class="form search-form">
+        <div class="row">
+          <input name="q" type="text" value="{{ q }}" placeholder="Search name, mobile, location or number">
+        </div>
+        <div class="actions">
+          <button type="submit">Search</button>
+          {% if q %}<a class="btn ghost" href="{{ url_for('admin') }}">Clear</a>{% endif %}
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Name</th><th>Mobile</th>
+              <th>Location</th><th>Total Amount</th><th>Bills Count</th>
+              <th>Bill Amounts &amp; Dates</th>
+              <th>Details</th><th>Photo</th><th>Card</th>
+              <th>Update</th><th>Delete</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            <tr>
+              <td><a href="{{ url_for('admin_record', rec_id=r['id']) }}"><span class="badge">#{{ r['number'] }}</span></a></td>
+              <td>{{ r['name'] }}</td>
+              <td><strong>{{ r['mobile'] }}</strong></td>
+              <td>{{ r['location'] }}</td>
+              <td><strong style="color:#ecc464;">&#8377; {{ '%.2f'|format(r['amount']) }}</strong></td>
+              <td style="text-align:center;">
+                <span class="badge" style="background:#1e3a5c;color:#ecc464;font-size:12px;padding:3px 8px;">
+                  {{ bill_data[r['id']]['count'] }} {% if bill_data[r['id']]['count'] == 1 %}Bill{% else %}Bills{% endif %}
+                </span>
+              </td>
+              <td>
+                {% if bill_data[r['id']]['entries'] %}
+                  <div style="display:flex;flex-direction:column;gap:4px;min-width:180px;">
+                    {% for b in bill_data[r['id']]['entries'] %}
+                      <div style="font-size:12px;background:#0a1a2e;padding:3px 8px;border-radius:5px;border:1px solid #1a3352;display:flex;justify-content:space-between;align-items:center;">
+                        <span style="color:#ecc464;font-weight:600;">&#8377; {{ '%.2f'|format(b['amount']) }}</span>
+                        <span style="color:#8299b3;font-size:11px;">{{ b['date'][:10] }}</span>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <span class="small">&#8377; {{ '%.2f'|format(r['amount']) }}</span>
+                {% endif %}
+              </td>
+              <td><a class="mini" href="{{ url_for('admin_record', rec_id=r['id']) }}">Details</a></td>
+              <td><a class="mini" href="{{ url_for('admin_photo', rec_id=r['id']) }}" target="_blank">Photo</a></td>
+              <td><a class="mini" href="{{ url_for('card_image', rec_id=r['id']) }}" target="_blank">Card</a></td>
+              <td><a class="mini edit" href="{{ url_for('admin_edit', rec_id=r['id']) }}">Update</a></td>
+              <td>
+                <form method="post" action="{{ url_for('admin_delete', rec_id=r['id']) }}" onsubmit="return confirm('Delete record #{{ r['number'] }} ({{ r['name'] }})? This cannot be undone.');">
+                  <button type="submit" class="mini danger">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="12" class="empty">No records found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 class="panel-title" style="margin-top:26px;">Numbers 1 &ndash; {{ MAX_NUMBER }}</h2>
+      <p class="sub" style="margin-bottom:16px;">Green = taken (click to view owner) &middot; Grey = available</p>
+      <div class="number-grid">
+        {% for n in range(1, MAX_NUMBER + 1) %}
+          {% if n in number_map %}
+            <a class="num-cell taken" href="{{ url_for('admin_record', rec_id=number_map[n]) }}">{{ n }}</a>
+          {% else %}
+            <span class="num-cell free">{{ n }}</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>

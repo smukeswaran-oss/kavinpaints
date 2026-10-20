@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gift Card Registration</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a href="{{ url_for('index') }}" class="site-brand">
+      <img class="site-logo" src="{{ url_for('static', filename='logo.png') }}" alt="Kavinesh Paint Shop Logo">
+      <h1 class="site-name">Kavinesh Paint Shop</h1>
+    </a>
+  </header>
+  <div class="page">
+    <div class="panel">
+      <a class="gift-text-link" href="{{ url_for('admin') }}">Gift Card Registration</a>
+      <p class="sub">Fill the form, submit and get your lucky number from 1 to {{ MAX_NUMBER }}</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="post" enctype="multipart/form-data" class="form">
+        <div class="row">
+          <label for="name">User Name</label>
+          <input id="name" name="name" type="text" value="{{ form.get('name', '') }}" placeholder="Enter your name" required>
+        </div>
+        <div class="row">
+          <label for="mobile">Mobile Number (10 digits)</label>
+          <input id="mobile" name="mobile" type="tel" value="{{ form.get('mobile', '') }}" placeholder="Enter 10-digit mobile number" maxlength="10" minlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" required>
+        </div>
+        <div class="row">
+          <label for="location">Location</label>
+          <input id="location" name="location" type="text" value="{{ form.get('location', '') }}" placeholder="Enter location" required>
+        </div>
+        <div class="row">
+          <label for="amount">Amount</label>
+          <input id="amount" name="amount" type="number" step="0.01" min="0" value="{{ form.get('amount', '') }}" placeholder="Enter amount">
+        </div>
+        <div class="row">
+          <label for="photo">Choose Photo</label>
+          <label class="file-field">
+            <input id="photo" name="photo" type="file" accept=".jpg,.jpeg,.png,.webp" required>
+            <span class="file-btn">Choose File</span>
+            <span class="file-name">No file chosen</span>
+          </label>
+        </div>
+        <button type="submit">Submit</button>
+      </form>
+
+      <a class="link" href="{{ url_for('gift_card') }}">Open Gift Card page &rarr;</a>
+      <div class="admin-links">
+        <a class="link" href="{{ url_for('admin') }}">Admin Database &rarr;</a>
+      </div>
+    </div>
+
+    {% if rec %}
+    <div class="panel card-panel">
+      <h2>Your Gift Card</h2>
+      <div class="details">
+        <div class="details-title">{{ rec['name'] }}</div>
+        <div class="details-grid">
+          <div><span>User Name</span><strong>{{ rec['name'] }}</strong></div>
+          <div><span>Mobile</span><strong>{{ rec['mobile'] }}</strong></div>
+          <div><span>Location</span><strong>{{ rec['location'] }}</strong></div>
+          <div><span>Bill Amount</span><strong>&#8377; {{ '%.2f'|format(rec['amount']) }}</strong></div>
+          <div><span>Card Number</span><strong>#{{ rec['number'] }}</strong></div>
+        </div>
+      </div>
+      <img class="card-img" src="{{ url_for('card_image', rec_id=rec['id']) }}" alt="Gift Card number {{ rec['number'] }}">
+      <div class="card-meta">
+        <span class="badge">#{{ rec['number'] }}</span>
+        <span>{{ rec['name'] }}</span>
+      </div>
+      <div class="actions">
+        <a class="btn" href="{{ url_for('download', rec_id=rec['id']) }}">Download PDF</a>
+        <a class="btn ghost" href="{{ url_for('gift_card') }}">Gift Card Page</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  <script>
+    const photoInput = document.getElementById("photo");
+    if (photoInput) {
+      photoInput.addEventListener("change", function () {
+        const nameEl = this.closest(".file-field").querySelector(".file-name");
+        nameEl.textContent = this.files.length ? this.files[0].name : "No file chosen";
+      });
+    }
+  </script>
+</body>
+</html>

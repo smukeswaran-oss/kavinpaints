@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gift Card</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a href="{{ url_for('index') }}" class="site-brand">
+      <img class="site-logo" src="{{ url_for('static', filename='logo.png') }}" alt="Kavinesh Paint Shop Logo">
+      <h1 class="site-name">Kavinesh Paint Shop</h1>
+    </a>
+  </header>
+  <div class="page">
+    <div class="panel">
+      <h2 class="panel-title">Gift Card</h2>
+      <p class="sub">Enter your mobile number to view your card</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="post" class="form">
+        <div class="row">
+          <label for="mobile">Mobile Number (10 digits)</label>
+          <input id="mobile" name="mobile" type="tel" value="{{ form.get('mobile', '') }}" placeholder="Enter 10-digit mobile number" maxlength="10" minlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" required autofocus>
+        </div>
+        <button type="submit">Show My Card</button>
+      </form>
+
+      <a class="link" href="{{ url_for('index') }}">&larr; Back to registration</a>
+    </div>
+
+    {% if rec %}
+    <div class="panel card-panel">
+      <h2>Gift Card</h2>
+      <div class="details">
+        <div class="details-title">{{ rec['name'] }}</div>
+        <div class="details-grid">
+          <div><span>User Name</span><strong>{{ rec['name'] }}</strong></div>
+          <div><span>Mobile</span><strong>{{ rec['mobile'] }}</strong></div>
+          <div><span>Location</span><strong>{{ rec['location'] }}</strong></div>
+          <div><span>Bill Amount</span><strong>&#8377; {{ '%.2f'|format(rec['amount']) }}</strong></div>
+          <div><span>Card Number</span><strong>#{{ rec['number'] }}</strong></div>
+        </div>
+      </div>
+      <img class="card-img" src="{{ url_for('card_image', rec_id=rec['id']) }}" alt="Gift Card number {{ rec['number'] }}">
+      <div class="card-meta">
+        <span class="badge">#{{ rec['number'] }}</span>
+        <span>{{ rec['name'] }}</span>
+      </div>
+      <div class="actions">
+        <a class="btn" href="{{ url_for('download', rec_id=rec['id']) }}">Download PDF</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</body>
+</html>
