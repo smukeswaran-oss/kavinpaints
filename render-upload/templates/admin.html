@@ -25,7 +25,13 @@
 
       <div class="admin-bar">
         <span class="admin-user">Logged in as <strong>kps</strong></span>
-        <a class="mini" href="{{ url_for('admin_logout') }}">Logout</a>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <form method="post" action="{{ url_for('admin_clear') }}" onsubmit="return confirm('This permanently deletes every record, bill photo and generated card. Continue?');" style="display:flex;gap:6px;align-items:center;margin:0;">
+            <input name="confirmation" type="text" placeholder="Type CLEAR" aria-label="Type CLEAR to delete all records" required style="width:105px;padding:6px 8px;">
+            <button type="submit" class="mini danger">Clear All</button>
+          </form>
+          <a class="mini" href="{{ url_for('admin_logout') }}">Logout</a>
+        </div>
       </div>
 
       <div class="stats">
