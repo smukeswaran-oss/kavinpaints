@@ -2,6 +2,7 @@ import re
 import secrets
 import sqlite3
 import uuid
+import os
 from datetime import datetime
 from functools import wraps
 from io import BytesIO
@@ -14,11 +15,17 @@ from PIL import Image, ImageDraw, ImageFont
 from werkzeug.utils import secure_filename
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "cards.db"
+# On Render, set DATA_DIR to the mount path of a Persistent Disk (for example
+# /var/data).  Keeping the database and uploaded files there prevents them
+# from being lost when the web service restarts or is redeployed.  Local runs
+# keep using this project folder without any extra configuration.
+DATA_DIR = Path(os.environ.get("DATA_DIR", BASE_DIR))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+DB_PATH = DATA_DIR / "cards.db"
 ADMIN_USER = "kps"
 ADMIN_PASSWORD = "kps@123"
-UPLOAD_DIR = BASE_DIR / "uploads"
-CARD_DIR = BASE_DIR / "cards"
+UPLOAD_DIR = DATA_DIR / "uploads"
+CARD_DIR = DATA_DIR / "cards"
 ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp"}
 MAX_NUMBER = 200
 
@@ -209,7 +216,7 @@ def make_card_image(number, name, site, location, amount, out_path):
 
 def ensure_card_image(rec):
     """Restore the derived card image when it is missing from disk."""
-    path = BASE_DIR / rec["card_image"]
+    path = DATA_DIR / rec["card_image"]
     if not path.exists():
         make_card_image(
             rec["number"], rec["name"], rec["site"], rec["location"],
@@ -246,12 +253,12 @@ def build_pdf(rec, db=None):
         ).fetchall()
         for e in entries:
             if e["photo"]:
-                p = BASE_DIR / e["photo"]
+                p = DATA_DIR / e["photo"]
                 if p.exists():
                     pdf.add_page()
                     place_image(pdf, p)
     else:
-        photo = BASE_DIR / rec["photo"]
+        photo = DATA_DIR / rec["photo"]
         if photo.exists():
             pdf.add_page()
             place_image(pdf, photo)
@@ -478,8 +485,8 @@ def admin_delete(rec_id):
     if rec is None:
         abort(404)
 
-    photo_path = BASE_DIR / rec["photo"]
-    card_path = BASE_DIR / rec["card_image"]
+    photo_path = DATA_DIR / rec["photo"]
+    card_path = DATA_DIR / rec["card_image"]
     for p in (photo_path, card_path):
         try:
             if p.exists():
@@ -502,15 +509,15 @@ def admin_clear():
 
     db = get_db()
     paths = [
-        BASE_DIR / row["photo"]
+        DATA_DIR / row["photo"]
         for row in db.execute("SELECT photo FROM cards WHERE photo IS NOT NULL")
     ]
     paths.extend(
-        BASE_DIR / row["card_image"]
+        DATA_DIR / row["card_image"]
         for row in db.execute("SELECT card_image FROM cards WHERE card_image IS NOT NULL")
     )
     paths.extend(
-        BASE_DIR / row["photo"]
+        DATA_DIR / row["photo"]
         for row in db.execute("SELECT photo FROM bill_entries WHERE photo IS NOT NULL")
     )
 
@@ -535,7 +542,7 @@ def admin_photo(rec_id):
     rec = get_db().execute("SELECT * FROM cards WHERE id = ?", (rec_id,)).fetchone()
     if rec is None:
         abort(404)
-    path = BASE_DIR / rec["photo"]
+    path = DATA_DIR / rec["photo"]
     if not path.exists():
         abort(404)
     return send_file(path)
@@ -547,7 +554,7 @@ def admin_entry_photo(entry_id):
     entry = get_db().execute("SELECT * FROM bill_entries WHERE id = ?", (entry_id,)).fetchone()
     if entry is None or not entry["photo"]:
         abort(404)
-    path = BASE_DIR / entry["photo"]
+    path = DATA_DIR / entry["photo"]
     if not path.exists():
         abort(404)
     return send_file(path)
