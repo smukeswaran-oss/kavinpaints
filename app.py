@@ -14,6 +14,11 @@ from fpdf import FPDF
 from PIL import Image, ImageDraw, ImageFont
 from werkzeug.utils import secure_filename
 
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    import psycopg
+    from psycopg.rows import dict_row
+
 BASE_DIR = Path(__file__).resolve().parent
 # On Render, set DATA_DIR to the mount path of a Persistent Disk (for example
 # /var/data).  Keeping the database and uploaded files there prevents them
@@ -37,11 +42,30 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 CARD_DIR.mkdir(exist_ok=True)
 
 
+class PostgresConnection:
+    """Small compatibility layer so the existing SQLite-style queries work on Postgres."""
+
+    def __init__(self, connection):
+        self.connection = connection
+
+    def execute(self, query, params=None):
+        return self.connection.execute(query.replace("?", "%s"), params)
+
+    def commit(self):
+        self.connection.commit()
+
+    def close(self):
+        self.connection.close()
+
+
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
-        g.db.row_factory = sqlite3.Row
-        g.db.execute("PRAGMA foreign_keys = ON")
+        if DATABASE_URL:
+            g.db = PostgresConnection(psycopg.connect(DATABASE_URL, row_factory=dict_row))
+        else:
+            g.db = sqlite3.connect(DB_PATH)
+            g.db.row_factory = sqlite3.Row
+            g.db.execute("PRAGMA foreign_keys = ON")
     return g.db
 
 
@@ -67,6 +91,37 @@ def admin_required(view):
 
 
 def init_db():
+    if DATABASE_URL:
+        with psycopg.connect(DATABASE_URL) as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS cards (
+                    id BIGSERIAL PRIMARY KEY,
+                    number INTEGER UNIQUE NOT NULL,
+                    name TEXT NOT NULL,
+                    mobile TEXT NOT NULL,
+                    site TEXT NOT NULL,
+                    location TEXT NOT NULL,
+                    amount DOUBLE PRECISION NOT NULL DEFAULT 0,
+                    photo TEXT NOT NULL,
+                    card_image TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS bill_entries (
+                    id BIGSERIAL PRIMARY KEY,
+                    card_id BIGINT NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
+                    amount DOUBLE PRECISION NOT NULL,
+                    photo TEXT,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+        return
+
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
             """
@@ -364,20 +419,24 @@ def index():
         card_path = CARD_DIR / card_name
         make_card_image(number, name, site, location, amount, card_path)
 
-        cur = db.execute(
-            """INSERT INTO cards (number, name, mobile, site, location, amount,
+        insert_card_sql = """INSERT INTO cards (number, name, mobile, site, location, amount,
                                   photo, card_image, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        if DATABASE_URL:
+            insert_card_sql += " RETURNING id"
+        cur = db.execute(
+            insert_card_sql,
             (number, name, mobile, site, location, amount,
              f"uploads/{photo_name}", f"cards/{card_name}", now),
         )
+        card_id = cur.fetchone()["id"] if DATABASE_URL else cur.lastrowid
         db.execute(
             """INSERT INTO bill_entries (card_id, amount, photo, created_at)
                VALUES (?, ?, ?, ?)""",
-            (cur.lastrowid, amount, f"uploads/{photo_name}", now),
+            (card_id, amount, f"uploads/{photo_name}", now),
         )
         db.commit()
-        rec = db.execute("SELECT * FROM cards WHERE id = ?", (cur.lastrowid,)).fetchone()
+        rec = db.execute("SELECT * FROM cards WHERE id = ?", (card_id,)).fetchone()
         flash(f"Success! Your gift card number is {number}.", "success")
 
     return render_template("index.html", rec=rec, form=request.form if request.method == "POST" else {})
@@ -616,7 +675,7 @@ def admin():
         rows = db.execute(
             """SELECT * FROM cards
                WHERE name LIKE ? OR mobile LIKE ? OR site LIKE ?
-                     OR location LIKE ? OR number LIKE ?
+                     OR location LIKE ? OR CAST(number AS TEXT) LIKE ?
                ORDER BY number""",
             tuple([f"%{q}%"] * 5),
         ).fetchall()
